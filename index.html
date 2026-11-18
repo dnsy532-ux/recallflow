@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>RecallFlow - 忘却曲線暗記アプリ</title>
+  
+  <!-- PWA & Mobile Web App Meta -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#2563eb">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="RecallFlow">
+  <link rel="apple-touch-icon" href="icons/icon.svg">
+  <link rel="icon" type="image/svg+xml" href="icons/icon.svg">
+  
+  <link rel="stylesheet" href="styles.css">
+  <script>
+    // Register Service Worker for Offline PWA
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js').catch((err) => {
+          console.log('SW registration failed: ', err);
+        });
+      });
+    }
+  </script>
+</head>
+<body>
+  <div id="app">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3">
+            <path d="M12 2a7 7 0 0 1 7 7c0 2.38-1.19 4.47-3 5.74V17a2 2 0 0 1-2 2H10a2 2 0 0 1-2-2v-2.26C6.19 13.47 5 11.38 5 9a7 7 0 0 1 7-7z"></path>
+            <path d="M9 21h6"></path>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <h1>RecallFlow</h1>
+          <span>Spaced Repetition</span>
+        </div>
+      </div>
+
+      <ul class="nav-links">
+        <li class="nav-item active" id="nav-decks">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+          </svg>
+          <span>デッキ一覧</span>
+        </li>
+        <li class="nav-item" id="nav-cards">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+            <line x1="3" y1="9" x2="21" y2="9"></line>
+            <line x1="9" y1="21" x2="9" y2="9"></line>
+          </svg>
+          <span>カード管理</span>
+        </li>
+        <li class="nav-item" id="nav-stats">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <line x1="18" y1="20" x2="18" y2="10"></line>
+            <line x1="12" y1="20" x2="12" y2="4"></line>
+            <line x1="6" y1="20" x2="6" y2="14"></line>
+          </svg>
+          <span>忘却曲線 & 統計</span>
+        </li>
+        <li class="nav-item" id="nav-settings">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0 2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+          </svg>
+          <span>設定 & バックアップ</span>
+        </li>
+      </ul>
+
+      <div class="sidebar-footer">
+        <div class="streak-badge">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 2c.11.33.24.66.39.98a13.38 13.38 0 0 1 1.48 4.22c.19 1.05.23 2.13.13 3.2-.09.92-.35 1.81-.76 2.63-.41.81-.97 1.52-1.64 2.08-.68.56-1.47.97-2.31 1.2-1.69.45-3.52.12-4.96-.91-.32-.23-.62-.5-.88-.79 1.13 2.65 3.32 4.67 6.06 5.56 2.74.89 5.75.56 8.23-.9 2.48-1.46 4.14-3.9 4.54-6.68.4-2.78-.47-5.57-2.37-7.64a13.8 13.8 0 0 0-5.91-4.04C13.29 2.5 12.65 2.21 12 2z"/>
+          </svg>
+          <span id="streak-display">0 日連続</span>
+        </div>
+        <span>SM-2 忘却曲線エンジン搭載</span>
+      </div>
+    </aside>
+
+    <!-- Main Viewport -->
+    <main class="main-viewport">
+      
+      <!-- 1. Decks View -->
+      <section class="view-section active" id="view-decks">
+        <div class="section-header">
+          <div class="section-title">
+            <h2>単語帳・デッキ一覧</h2>
+            <p>1セット最大20問で集中して学習できます（いつでも継続・終了可能）</p>
+          </div>
+          <button class="btn btn-primary" id="btn-open-add-deck">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            新規デッキ作成
+          </button>
+        </div>
+
+        <div class="decks-grid" id="decks-list-container">
+          <!-- Populated by app.js -->
+        </div>
+      </section>
+
+      <!-- 2. Study Session View -->
+      <section class="view-section" id="view-study">
+        <div class="study-container">
+          <div class="study-top-bar">
+            <div>
+              <span id="study-deck-title" style="font-weight: 700; color: #1e293b; font-size: 1.05rem;"></span>
+              <span id="study-mode-badge" class="count-pill mode-badge-normal" style="margin-left: 8px;">表→裏 (通常)</span>
+              <span id="study-batch-indicator" class="study-session-batch-badge" style="margin-left: 6px;">1セット目</span>
+            </div>
+            <div class="study-progress-info">
+              <span class="count-pill count-due" id="study-queue-count" style="font-size: 0.82rem;">1 / 20 問</span>
+            </div>
+          </div>
+
+          <div class="progress-bar-container">
+            <div class="progress-bar-fill" id="study-progress-fill"></div>
+          </div>
+
+          <!-- Flashcard Card Component -->
+          <div class="flashcard-wrapper" id="flashcard-wrapper">
+            <div class="flashcard" id="flashcard-element">
+              <div class="flashcard-content">
+                <div class="card-question" id="study-card-front">
+                  Loading...
+                </div>
+
+                <div class="card-divider" id="card-divider"></div>
+
+                <div class="card-answer-box" id="card-answer-box">
+                  <div class="card-answer" id="study-card-back"></div>
+                  <div class="card-note" id="study-card-note"></div>
+                </div>
+
+                <div class="card-tags" id="study-card-tags"></div>
+              </div>
+
+              <div class="card-meta-bottom">
+                <button class="tts-btn" id="btn-study-speak" title="音声を再生 (ショートカット: R)">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                    <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+                  </svg>
+                  <span>発音を聞く (R)</span>
+                </button>
+                <span id="study-card-interval-info"></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Rating & Reveal Controls -->
+          <div class="study-controls" id="study-controls">
+            <div class="reveal-btn-container">
+              <button class="btn btn-primary btn-reveal" id="btn-reveal-answer">
+                <span>答えを表示</span>
+                <span style="font-size: 0.8rem; opacity: 0.8; margin-left: 8px;">[Space / Enter]</span>
+              </button>
+            </div>
+
+            <!-- Anki-style 4-level rating buttons -->
+            <div class="rating-buttons-grid" id="rating-buttons-grid">
+              <button class="rating-btn btn-again" id="btn-rate-again">
+                <span class="label">もう一度</span>
+                <span class="interval" id="preview-again">&lt; 10分</span>
+                <span class="key-hint">[A]</span>
+              </button>
+              <button class="rating-btn btn-hard" id="btn-rate-hard">
+                <span class="label">難しい</span>
+                <span class="interval" id="preview-hard">1 日後</span>
+                <span class="key-hint">[S]</span>
+              </button>
+              <button class="rating-btn btn-good" id="btn-rate-good">
+                <span class="label">普通</span>
+                <span class="interval" id="preview-good">3 日後</span>
+                <span class="key-hint">[D]</span>
+              </button>
+              <button class="rating-btn btn-easy" id="btn-rate-easy">
+                <span class="label">簡単</span>
+                <span class="interval" id="preview-easy">6 日後</span>
+                <span class="key-hint">[F]</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Session 20-Question Break / Completed Screen -->
+          <div class="session-finished" id="session-finished-container">
+            <div class="finish-icon">
+              <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+              </svg>
+            </div>
+            <h3 id="session-finish-title" style="font-size: 1.55rem; font-weight: 700; color: #0f172a;">20問のセッション完了！</h3>
+            <p id="session-finish-subtitle" style="color: var(--text-muted); font-size: 0.92rem;">
+              集中して20問解き終えました。このまま次へ進むか、ここで一区切りにするかを選択できます。
+            </p>
+
+            <div class="session-stats-cards">
+              <div class="stat-box">
+                <div class="val" id="stat-session-count">20</div>
+                <div class="lbl">今回の回答数</div>
+              </div>
+              <div class="stat-box">
+                <div class="val" id="stat-success-rate">100%</div>
+                <div class="lbl">正答率 (Good / Easy)</div>
+              </div>
+              <div class="stat-box">
+                <div class="val" id="stat-remaining-queue" style="color: #2563eb;">0</div>
+                <div class="lbl">復習待ちカード残数</div>
+              </div>
+            </div>
+
+            <!-- Choose Continue or Stop -->
+            <div class="session-action-group">
+              <button class="btn btn-secondary" id="btn-session-done-back">
+                ここで終了（デッキ一覧へ）
+              </button>
+              <button class="btn btn-primary" id="btn-session-continue">
+                次の20問を続ける
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 3. Cards Management View -->
+      <section class="view-section" id="view-cards">
+        <div class="section-header">
+          <div class="section-title">
+            <h2>カード管理</h2>
+            <p id="card-count-indicator">全カードの追加・編集・検索</p>
+          </div>
+          <button class="btn btn-primary" id="btn-open-add-card">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            カードを追加
+          </button>
+        </div>
+
+        <div class="table-controls">
+          <select class="deck-select" id="card-deck-select"></select>
+          <div class="mode-toggle-group">
+            <button class="mode-toggle-btn active" id="btn-cards-mode-normal">通常 (表→裏)</button>
+            <button class="mode-toggle-btn" id="btn-cards-mode-reverse">反転 (裏→表)</button>
+          </div>
+          <input type="text" class="search-input" id="card-search-input" placeholder="カードを検索（表面・裏面・タグ）...">
+        </div>
+
+        <div class="cards-table-container">
+          <table class="cards-table">
+            <thead>
+              <tr>
+                <th style="width: 30%;">表面 (Question)</th>
+                <th style="width: 35%;">裏面 (Answer)</th>
+                <th style="width: 12%;">次回間隔</th>
+                <th style="width: 8%;">Ease</th>
+                <th style="width: 10%;">タグ</th>
+                <th style="width: 5%; text-align: right;">操作</th>
+              </tr>
+            </thead>
+            <tbody id="cards-table-body">
+              <!-- Populated by app.js -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- 4. Stats & Retention View -->
+      <section class="view-section" id="view-stats">
+        <div class="section-header">
+          <div class="section-title">
+            <h2>忘却曲線 & 定着分析</h2>
+            <p id="stats-subtitle">エビングハウスの忘却曲線に基づいた記憶の定着状況</p>
+          </div>
+          <div class="mode-toggle-group">
+            <button class="mode-toggle-btn active" id="btn-stats-mode-normal">通常モード (表→裏)</button>
+            <button class="mode-toggle-btn" id="btn-stats-mode-reverse">反転モード (裏→表)</button>
+          </div>
+        </div>
+
+        <div class="analytics-grid">
+          <div class="chart-card">
+            <div class="chart-title">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+              カード総数
+            </div>
+            <div style="font-size: 2.2rem; font-weight: 700; color: #0f172a;" id="stat-total-cards">0</div>
+            <p style="color: var(--text-dim); font-size: 0.8rem; margin-top: 6px;">登録されている全カードの総数</p>
+          </div>
+
+          <div class="chart-card">
+            <div class="chart-title">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 14 14"></polyline></svg>
+              長期記憶に定着 (Mature)
+            </div>
+            <div style="font-size: 2.2rem; font-weight: 700; color: #059669;" id="stat-mature-cards">0</div>
+            <p style="color: var(--text-dim); font-size: 0.8rem; margin-top: 6px;">復習間隔が21日以上の安定カード</p>
+          </div>
+
+          <div class="chart-card">
+            <div class="chart-title">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polygon points="10 8 16 12 10 16 10 8"></polygon></svg>
+              学習中 / 新規
+            </div>
+            <div style="font-size: 1.35rem; font-weight: 700; margin-top: 6px; color: #0f172a;">
+              学習中: <span id="stat-learning-cards" style="color: #2563eb;">0</span> 枚 / 
+              新規: <span id="stat-new-cards" style="color: #64748b;">0</span> 枚
+            </div>
+            <p style="color: var(--text-dim); font-size: 0.8rem; margin-top: 10px;">日々の復習により徐々に長期記憶へ移行します</p>
+          </div>
+        </div>
+
+        <!-- 7-Day Forecast Chart -->
+        <div class="chart-card">
+          <div class="chart-title">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+            今後7日間の復習予定予測
+          </div>
+          <div class="schedule-chart-bars" id="forecast-chart-bars">
+            <!-- Populated by app.js -->
+          </div>
+        </div>
+      </section>
+
+      <!-- 5. Settings & Tools View -->
+      <section class="view-section" id="view-settings">
+        <div class="section-header">
+          <div class="section-title">
+            <h2>設定 & データバックアップ</h2>
+            <p>データの保存・復元・CSV取り込みなどを行えます</p>
+          </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 20px;">
+          <div class="chart-card">
+            <h3 style="font-size: 1.1rem; margin-bottom: 8px;">データのエクスポート & バックアップ</h3>
+            <p style="color: var(--text-muted); font-size: 0.88rem; margin-bottom: 16px;">
+              アプリ内の全てのデッキと学習履歴をJSONファイルとして保存したり、選択中デッキをCSVとして出力できます。
+            </p>
+            <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+              <button class="btn btn-secondary" id="btn-export-json">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                全データJSONバックアップ
+              </button>
+              <button class="btn btn-secondary" id="btn-export-csv">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                選択デッキのCSV出力
+              </button>
+            </div>
+          </div>
+
+          <div class="chart-card">
+            <h3 style="font-size: 1.1rem; margin-bottom: 8px;">データのインポート・復元</h3>
+            <p style="color: var(--text-muted); font-size: 0.88rem; margin-bottom: 16px;">
+              バックアップJSONファイルから復元するか、CSVファイル（表面,裏面,備考,タグ）から一括登録します。
+            </p>
+            <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+              <label class="btn btn-secondary" style="cursor: pointer;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                JSONバックアップから復元
+                <input type="file" id="json-import-input" accept=".json" style="display: none;">
+              </label>
+
+              <label class="btn btn-secondary" style="cursor: pointer;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+                CSVからカードを取り込む
+                <input type="file" id="csv-import-input" accept=".csv" style="display: none;">
+              </label>
+            </div>
+          </div>
+
+          <div class="chart-card">
+            <h3 style="font-size: 1.1rem; margin-bottom: 8px;">キーボードショートカット一覧</h3>
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; font-size: 0.86rem; color: var(--text-muted); margin-top: 10px;">
+              <div><kbd style="background: #e2e8f0; padding: 2px 6px; border-radius: 4px; color: #0f172a;">Space</kbd> / <kbd style="background: #e2e8f0; padding: 2px 6px; border-radius: 4px; color: #0f172a;">Enter</kbd> : 答えを表示</div>
+              <div><kbd style="background: #e2e8f0; padding: 2px 6px; border-radius: 4px; color: #0f172a;">A</kbd> : もう一度 (Again)</div>
+              <div><kbd style="background: #e2e8f0; padding: 2px 6px; border-radius: 4px; color: #0f172a;">S</kbd> : 難しい (Hard)</div>
+              <div><kbd style="background: #e2e8f0; padding: 2px 6px; border-radius: 4px; color: #0f172a;">D</kbd> : 普通 (Good)</div>
+              <div><kbd style="background: #e2e8f0; padding: 2px 6px; border-radius: 4px; color: #0f172a;">F</kbd> : 簡単 (Easy)</div>
+              <div><kbd style="background: #e2e8f0; padding: 2px 6px; border-radius: 4px; color: #0f172a;">R</kbd> : 発音読み上げ (TTS)</div>
+            </div>
+          </div>
+
+          <div class="chart-card" style="border-color: #fecaca;">
+            <h3 style="font-size: 1.1rem; margin-bottom: 8px; color: #dc2626;">リセット</h3>
+            <p style="color: var(--text-muted); font-size: 0.88rem; margin-bottom: 16px;">
+              全てのデッキを初期状態（TOEIC英語、IT用語、ビジネスフレームワーク）に戻します。
+            </p>
+            <button class="btn btn-danger" id="btn-reset-preset">
+              初期プリセットにリセットする
+            </button>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- Modal: Create / Edit Deck -->
+  <div class="modal-overlay" id="deck-modal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 id="modal-deck-title">新規デッキ作成</h3>
+        <button class="modal-close-btn" id="deck-modal-close">&times;</button>
+      </div>
+      <input type="hidden" id="deck-edit-id">
+      <div class="form-group">
+        <label>デッキ名 (必須)</label>
+        <input type="text" class="form-control" id="deck-title-input" placeholder="例: 日本史 年号暗記, 薬学 薬効分類">
+      </div>
+      <div class="form-group">
+        <label>説明 (任意)</label>
+        <textarea class="form-control" id="deck-desc-input" placeholder="この単語帳の概要や目標など"></textarea>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" id="btn-cancel-deck-modal">キャンセル</button>
+        <button class="btn btn-primary" id="btn-save-deck-modal">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Create / Edit Card -->
+  <div class="modal-overlay" id="card-modal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 id="modal-card-title">カードを追加</h3>
+        <button class="modal-close-btn" id="card-modal-close">&times;</button>
+      </div>
+      <input type="hidden" id="card-edit-id">
+      <div class="form-group">
+        <label>表面 (問題 / 単語) *</label>
+        <input type="text" class="form-control" id="card-front-input" placeholder="例: precipitate">
+      </div>
+      <div class="form-group">
+        <label>裏面 (解答 / 意味) *</label>
+        <input type="text" class="form-control" id="card-back-input" placeholder="例: 〜を引き起こす、沈殿物">
+      </div>
+      <div class="form-group">
+        <label>備考・例文・解説 (任意)</label>
+        <textarea class="form-control" id="card-note-input" placeholder="例: The crisis precipitated an election."></textarea>
+      </div>
+      <div class="form-group">
+        <label>タグ (カンマ区切り、任意)</label>
+        <input type="text" class="form-control" id="card-tags-input" placeholder="例: 動詞, 難問, TOEIC900">
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" id="btn-cancel-card-modal">キャンセル</button>
+        <button class="btn btn-primary" id="btn-save-card-modal">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast notifications container -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>

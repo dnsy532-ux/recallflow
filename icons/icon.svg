@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2563eb" />
+      <stop offset="100%" stop-color="#38bdf8" />
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="8" stdDeviation="16" flood-color="#0f172a" flood-opacity="0.3"/>
+    </filter>
+  </defs>
+  <rect width="512" height="512" rx="128" fill="url(#bg)"/>
+  <g transform="translate(106, 106)" filter="url(#shadow)">
+    <path d="M150 25 C80 25 25 80 25 150 C25 200 55 240 95 265 L95 285 C95 295 105 305 115 305 L185 305 C195 305 205 295 205 285 L205 265 C245 240 275 200 275 150 C275 80 220 25 150 25 Z" fill="#ffffff"/>
+    <path d="M105 330 L195 330 C200 330 205 335 205 340 C205 345 200 350 195 350 L105 350 C100 350 95 345 95 340 C95 335 100 330 105 330 Z" fill="#e2e8f0"/>
+    <path d="M120 365 L180 365 C185 365 190 370 190 375 C190 380 185 385 180 385 L120 385 C115 385 110 380 110 375 C110 370 115 365 120 365 Z" fill="#cbd5e1"/>
+    <!-- Flow curve / lightning in bulb -->
+    <path d="M150 85 L125 160 L160 160 L135 235 L190 145 L155 145 Z" fill="#2563eb"/>
+  </g>
+</svg>
